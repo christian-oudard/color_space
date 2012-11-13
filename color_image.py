@@ -1,16 +1,14 @@
 from __future__ import division
-import math
-from grapefruit import Color
+
 from PIL import Image
+from grapefruit import Color
+from util import interpolate, chroma_hue_to_ab
 
 def color_to_ints(color):
     # Gray out illegal colors.
     if not color.isLegal:
-        color = Color.NewFromHtml('gray')
+        color = Color.NewFromLab(50, 0, 0)
     return color.intTuple
-
-def interpolate(start, end, amount):
-    return start + (end - start) * amount
 
 def draw_lab_l_slice(image, l):
     width, height = image.size
@@ -48,9 +46,8 @@ def draw_lab_l_cylinder(image, l):
     for x in range(width):
         hue = interpolate(0, 360, x / width)
         for y in range(height):
-            chroma = interpolate(1.0, 0.0, y / height)
-            a = math.sin(math.radians(hue)) * chroma * math.sqrt(2)
-            b = math.cos(math.radians(hue)) * chroma * math.sqrt(2)
+            chroma = interpolate(1.4, 0.0, y / height)
+            a, b = chroma_hue_to_ab(chroma, hue)
             color = Color.NewFromLab(l, a, b)
             pixels[x,y] = color_to_ints(color)
 
@@ -61,8 +58,7 @@ def draw_lab_hue_cylinder(image, hue):
         chroma = interpolate(0.0, 1.0, x / width)
         for y in range(height):
             l = interpolate(100.0, 0.0, y / height)
-            a = math.sin(math.radians(hue)) * chroma * math.sqrt(2)
-            b = math.cos(math.radians(hue)) * chroma * math.sqrt(2)
+            a, b = chroma_hue_to_ab(chroma, hue)
             color = Color.NewFromLab(l, a, b)
             pixels[x,y] = color_to_ints(color)
 
@@ -90,6 +86,24 @@ def make_lab_slices():
             print(name)
             img.save(name)
 
+def make_lab_cylinders_special():
+    special_colors = [
+        ('red', (1, 0, 0)),
+        ('green', (0, 1, 0)),
+        ('blue', (0, 0, 1)),
+        ('yellow', (1, 1, 0)),
+        ('magenta', (1, 0, 1)),
+        ('cyan', (0, 1, 1)),
+    ]
+    for width, height in [(360, 100), (360*4, 100*4)]:
+        for color_name, rgb in special_colors:
+            l, a, b = Color.NewFromRgb(*rgb).lab
+            img = Image.new('RGB', (width, height), 'white')
+            draw_lab_l_cylinder(img, l)
+            name = 'CIELAB_CYLINDER_{}x{}_L{:02d}_{}.png'.format(width, height, int(l), color_name)
+            print(name)
+            img.save(name)
+
 def make_lab_cylinders():
     for width, height in [(360, 100), (360*4, 100*4)]:
         for l in range(5, 100, 5):
@@ -110,5 +124,6 @@ def make_lab_spokes():
 
 if __name__ == '__main__':
     #make_lab_slices()
-    #make_lab_cylinders()
-    make_lab_spokes()
+    make_lab_cylinders()
+    #make_lab_spokes()
+    #make_lab_cylinders_special()
