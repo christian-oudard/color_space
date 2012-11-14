@@ -1,7 +1,7 @@
 from __future__ import division
 
 from grapefruit import Color
-from util import chroma_hue_to_ab
+from util import lab_chroma, chroma_hue_to_ab
 
 def transition_point(func, lo, hi, epsilon=10e-5, depth=0):
     """
@@ -85,25 +85,22 @@ def peak_chroma_color_scipy():
 
     guess = (33, 0.7, -0.9)
 
-    def chroma(l, a, b):
-        color = Color.NewFromLab(l, a, b)
-        if not color.isLegal:
-            return -1
-        return math.sqrt(a**2 + b**2)
-
     def f(x):
         l, a, b = x
-        return -chroma(l, a, b)
+        return -lab_chroma(l, a, b)
 
     l, a, b = scipy.optimize.fmin(f, guess, xtol=1e-5)
-    return Color.NewFromLab(l, a, b), chroma(l, a, b)
+    return Color.NewFromLab(l, a, b), lab_chroma(l, a, b)
 
 def max_chroma(hue, lightness):
     def valid_for_chroma(chroma):
         a, b = chroma_hue_to_ab(chroma, hue)
         color = Color.NewFromLab(lightness, a, b)
         return color.isLegal
-    return transition_point(valid_for_chroma, 0.0, 1.5)
+    try:
+        return transition_point(valid_for_chroma, 0.0, 1.5)
+    except AssertionError:
+        return None
 
 def min_global_chroma(lightness):
     """
@@ -114,10 +111,11 @@ def min_global_chroma(lightness):
         max_chroma(hue, lightness)
         for hue in range(0, 360)
     )
-#print(most_colorful_lightness())
-#color, chroma = peak_chroma_color()
-color, chroma = peak_chroma_color_scipy()
-print(chroma)
-print(color.html)
-print(color.lab)
 
+if __name__ == '__main__':
+    #print(most_colorful_lightness())
+    #color, chroma = peak_chroma_color()
+    color, chroma = peak_chroma_color_scipy()
+    print(chroma)
+    print(color.html)
+    print(color.lab)

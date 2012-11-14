@@ -4,10 +4,12 @@ from PIL import Image
 from grapefruit import Color
 from util import interpolate, chroma_hue_to_ab
 
+gray = Color.NewFromLab(50, 0, 0)
+
 def color_to_ints(color):
     # Gray out illegal colors.
     if not color.isLegal:
-        color = Color.NewFromLab(50, 0, 0)
+        color = gray
     return color.intTuple
 
 def draw_lab_l_slice(image, l):
@@ -26,7 +28,7 @@ def draw_lab_a_slice(image, a):
     for x in range(width):
         b = interpolate(-1.0, 1.0, x / width)
         for y in range(height):
-            l = interpolate(100.0, 0.0, y / height)
+            l = interpolate(99.9, 0.0, y / height)
             color = Color.NewFromLab(l, a, b)
             pixels[x,y] = color_to_ints(color)
 
@@ -36,7 +38,7 @@ def draw_lab_b_slice(image, b):
     for x in range(width):
         a = interpolate(-1.0, 1.0, x / width)
         for y in range(height):
-            l = interpolate(100.0, 0.0, y / height)
+            l = interpolate(99.9, 0.0, y / height)
             color = Color.NewFromLab(l, a, b)
             pixels[x,y] = color_to_ints(color)
 
@@ -57,7 +59,7 @@ def draw_lab_hue_cylinder(image, hue):
     for x in range(width):
         chroma = interpolate(0.0, 1.0, x / width)
         for y in range(height):
-            l = interpolate(100.0, 0.0, y / height)
+            l = interpolate(99.9, 0.0, y / height)
             a, b = chroma_hue_to_ab(chroma, hue)
             color = Color.NewFromLab(l, a, b)
             pixels[x,y] = color_to_ints(color)
@@ -122,8 +124,33 @@ def make_lab_spokes():
             print(name)
             img.save(name)
 
+def draw_cylinder_surface(image):
+    from limits import max_chroma
+    width, height = image.size
+    pixels = image.load()
+    for x in range(width):
+        hue = interpolate(0, 360, x / width)
+        for y in range(height):
+            l = interpolate(99.9, 0.0, y / height)
+            chroma = max_chroma(hue, l)
+            if chroma:
+                a, b = chroma_hue_to_ab(chroma, hue)
+                color = Color.NewFromLab(l, a, b)
+            else:
+                color = gray
+            pixels[x,y] = color_to_ints(color)
+
+def make_cylinder_surfaces():
+    for width, height in [(36, 10), (360, 100), (360*4, 100*4)]:
+        img = Image.new('RGB', (width, height), 'white')
+        draw_cylinder_surface(img)
+        name = 'CIELAB_CYLINDER_SURFACE_{}x{}.png'.format(width, height)
+        print(name)
+        img.save(name)
+
 if __name__ == '__main__':
     #make_lab_slices()
-    make_lab_cylinders()
+    #make_lab_cylinders()
     #make_lab_spokes()
     #make_lab_cylinders_special()
+    make_cylinder_surfaces()
