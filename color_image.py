@@ -53,17 +53,6 @@ def draw_lab_l_cylinder(image, l):
             color = Color.NewFromLab(l, a, b)
             pixels[x,y] = color_to_ints(color)
 
-def draw_lab_hue_cylinder(image, hue):
-    width, height = image.size
-    pixels = image.load()
-    for x in range(width):
-        chroma = interpolate(0.0, 1.0, x / width)
-        for y in range(height):
-            l = interpolate(99.9, 0.0, y / height)
-            a, b = chroma_hue_to_ab(chroma, hue)
-            color = Color.NewFromLab(l, a, b)
-            pixels[x,y] = color_to_ints(color)
-
 def make_lab_slices():
     for size in (16, 128, 512, 1024):
         img = Image.new('RGB', (size, size), 'white')
@@ -115,11 +104,22 @@ def make_lab_cylinders():
             print(name)
             img.save(name)
 
+def draw_lab_hue_spoke(image, hue):
+    width, height = image.size
+    pixels = image.load()
+    for x in range(width):
+        chroma = interpolate(-1.5, 1.5, x / width)
+        for y in range(height):
+            l = interpolate(99.9, 0.0, y / height)
+            a, b = chroma_hue_to_ab(chroma, hue)
+            color = Color.NewFromLab(l, a, b)
+            pixels[x,y] = color_to_ints(color)
+
 def make_lab_spokes():
-    for width, height in [(128, 128), (512, 512)]:
-        for hue in range(0, 360, 5):
+    for width, height in [(64, 64), (512, 512)]:
+        for hue in range(0, 180, 5):
             img = Image.new('RGB', (width, height), 'white')
-            draw_lab_hue_cylinder(img, hue)
+            draw_lab_hue_spoke(img, hue)
             name = 'CIELAB_CYLINDER_{}x{}_hue{:03d}.png'.format(width, height, hue)
             print(name)
             img.save(name)
@@ -151,6 +151,6 @@ def make_cylinder_surfaces():
 if __name__ == '__main__':
     #make_lab_slices()
     #make_lab_cylinders()
-    #make_lab_spokes()
+    make_lab_spokes()
     #make_lab_cylinders_special()
-    make_cylinder_surfaces()
+    #make_cylinder_surfaces()
